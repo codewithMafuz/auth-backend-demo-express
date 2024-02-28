@@ -50,7 +50,7 @@ class UserController {
             }
 
         } catch (error) {
-            console.log("error : ", error)
+            // console.log("error : ", error)
             return res.send(sendTemplate(false, "Something went wrong"))
         }
     }
@@ -118,14 +118,14 @@ class UserController {
                     "codewithMafuz - Password Reset Link",
                     resetPasswordLinkBody(link, checkedUser?.name)
                 )
-                console.log('info:', info)
+                // console.log('info:', info)
                 return res.send(sendTemplate(true, "Sent email, check the reset password link within 3 minutes"))
             } else {
                 return res.send(sendTemplate(false, "Please use correct email"))
             }
 
         } catch (error) {
-            console.log(error)
+            // console.log(error)
             return res.send(sendTemplate(false, "failed"))
         }
     }
@@ -134,7 +134,7 @@ class UserController {
         try {
             nestedObjectStringsModify(req.body)
             const { id, token } = req.params
-            console.log(id, token)
+            // console.log(id, token)
             if (!id && !token) return res.send(sendTemplate(false, "sorry, could not reach the page"))
 
             const { userId = null } = jwt.verify(token, id + process.env.JWT_SECRET_KEY)
@@ -148,7 +148,7 @@ class UserController {
                     const changedUser = await User.findByIdAndUpdate(
                         userId,
                         { password: await bcrypt.hash(password, await bcrypt.genSalt(10)) }, { new: true }).select('-password')
-                    console.log("changed of him/her", changedUser)
+                    // console.log("changed of him/her", changedUser)
                     return res.send(sendTemplate(true, "Successfully reset password"))
 
                 }
@@ -209,7 +209,7 @@ class UserController {
                 return res.send(sendTemplate(false, "Unauthorized token"))
             }
         } catch (error) {
-            console.log(error)
+            // console.log(error)
             return res.send(sendTemplate(false, "failed"))
         }
     }

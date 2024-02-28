@@ -29,5 +29,5 @@ app.use('/api/user', buyerAPIs)
 
 
 app.listen(PORT, () => {
-    console.log('app listening at port : ', PORT)
+    // console.log('app listening at port : ', PORT)
 })
