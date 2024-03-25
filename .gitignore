@@ -20,6 +20,9 @@ node_modules/
 # Ignore npm debugging log file
 npm-debug.log*
 
+#.uploads
+uploads/
+
 # Ignore yarn errors log file
 yarn-error.log
 

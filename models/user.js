@@ -10,17 +10,24 @@ const userSchema = new mongoose.Schema({
         required: true,
         unique: true
     },
-    phone: {
+    headline: {
         type: String,
-        default: 'N/A',
+        required: false,
     },
     password: {
         type: String,
         required: true
     },
-    recieveEmails: {
+    agreeTerms: {
         type: Boolean,
-        default: false
+    },
+    isEmailVerified: {
+        type: Boolean,
+        default: false,
+    },
+    sentEmailLinkExpire: {
+        type: Number,
+        default: 0,
     }
 });
 

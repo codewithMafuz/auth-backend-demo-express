@@ -11,6 +11,7 @@ const isValidPasswordNormal = (password) => /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-z
 const validationTypesFunc = {
     singleName: isValidSingleName,
     fullName: isValidFullName,
+    name: isValidFullName,
     email: isValidEmailAddress,
     password: isValidPasswordNormal,
 }
@@ -18,7 +19,7 @@ const validationTypesFunc = {
 const checkValidation = (typesAndValues = { singleName: false, fullName: false, email: false, password: false }) => {
     const errors = {}
     for (const [type, typeValue] of Object.entries(typesAndValues)) {
-        if (type) {
+        if (type && type in validationTypesFunc) {
             const isValid = validationTypesFunc[type](typeValue)
             if (!isValid) {
                 errors[type] = true
