@@ -30,7 +30,7 @@ const checkValidation = (typesAndValues = { singleName: false, fullName: false, 
 }
 
 
-const generatePassword = (hard = true) => {
+const generatePassword = (hard = false) => {
     const allowedCharacters = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789' + (hard ? '!@#$%^&*()a' : 'a');
     let password = '';
     for (let i = 0; i < 12; i++) {

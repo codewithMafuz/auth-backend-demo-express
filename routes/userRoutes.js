@@ -9,7 +9,6 @@ router.use('/loggedin', verifyUserAuth)
 router.use('/delete-user', verifyUserAuth)
 router.use('/update-data', verifyUserAuth)
 router.use('/update-password', verifyUserAuth)
-router.post('/delete-user', UserController.deleteUser)
 
 // public routes
 router.post('/registration', UserController.registration)

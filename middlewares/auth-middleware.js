@@ -22,7 +22,7 @@ var verifyUserAuth = async (req, res, next) => {
             return res.send({ success: false, status: "Failed", message: "Unauthorized token" })
         }
     } catch (error) {
-        console.log('error in middleware', error)
+        // console.log('error in middleware', error)
         return res.send({ success: false, status: "Failed", message: "something error happened" })
     }
 }

@@ -4,14 +4,14 @@ const connectDB = (DB_CONNECTION_STRING) => {
     try {
         mongoose.connect(DB_CONNECTION_STRING)
             .then((val) => {
-                console.log("Successful Connected to -", {
-                    user: val.connection.user,
-                    dbName: val.connection.name
-                },
-                    "========================================================================================")
+                // console.log("Successful Connected to -", {
+                // user: val.connection.user,
+                // dbName: val.connection.name
+                // },
+                // // "========================================================================================")
             })
     } catch (err) {
-        console.log(err);
+        // console.log(err);
     }
 }
 

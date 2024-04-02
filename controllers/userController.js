@@ -1,7 +1,7 @@
 import User from "../models/user.js";
 import jwt from 'jsonwebtoken'
 import bcrypt from 'bcrypt'
-import { checkValidation, isValidEmailAddress, isValidPasswordNormal } from "./helps/validation-help.js";
+import { checkValidation, generatePassword, isValidEmailAddress, isValidPasswordNormal } from "./helps/validation-help.js";
 import { nestedObjectStringsModify } from "./helps/object-help.js";
 import { getVerificationLinkTemplate, getVerificationCodeTemplate, sendMail, getEmailConfirmationTemplate } from "../config/emailConfig.js";
 import { FRONTEND_BASE_PATH, JWT_SECRET_KEY } from '../app.js'
@@ -74,7 +74,7 @@ class UserController {
                             }
                         } else {
                             return res.send(sendTemplate(true, `Account already has been created, just confirm your email`, {
-                                alreadySent : true,
+                                alreadySent: true,
                                 email: email,
                                 confLinkExpInMs: user.sentEmailLinkExpire - Date.now()
                             }))
@@ -92,11 +92,7 @@ class UserController {
             return res.send(sendTemplate(false, "Something went wrong"))
         }
     }
-    /**
-     * @param {string} link - enter the link for user to redirect
-     * - enter link string "basePath/path1/path2/@setToken/path3" like this to set token position in path
-     * - in this string real path will be like this "basePath/path1/path2/THE_TOKEN/path3"
-     */
+
     static sendEmailConfirmation = async (email, subject, _id, link, linkTitle, nameOrUsername, reasonToUseLink, fromBrandName, expiresInMinutes = 30, ifUserDidNot = "If you did not requested for this, please ignore this email", extraHTML = '') => {
 
         try {
@@ -125,7 +121,7 @@ class UserController {
                 return { isSuccess: false }
             }
         } catch (error) {
-            console.log(error)
+            // console.log(error)
             return res.send(sendTemplate(false, "something went wrong"))
         }
     }
@@ -134,10 +130,10 @@ class UserController {
         try {
             const { id, token } = req.params
             const user = await User.findById(id)
-            console.log(user)
+            // console.log(user)
             if (!user.isEmailVerified) {
-                const { userId = null } = await jwt.verify(token, id + JWT_SECRET_KEY)
-                console.log('userid -----------------', userId)
+                const { userId = null } = jwt.verify(token, id + JWT_SECRET_KEY)
+                // console.log('userid -----------------', userId)
                 if (userId) {
                     await User.findByIdAndUpdate(
                         id,
@@ -176,7 +172,7 @@ class UserController {
                         const token = jwt.sign(
                             { userId: _id },
                             JWT_SECRET_KEY,
-                            { expiresIn: '3d' }
+                            { expiresIn: '7d' }
                         )
                         return res.send(sendTemplate(true, "Successful", { token, _id }))
 
@@ -208,12 +204,20 @@ class UserController {
         try {
             const email = req.body.email.trim()
             const checkedUser = await User.findOne({ email }).select('-password')
+            // console.log("checkuser", checkedUser)
             if (!checkedUser.isEmailVerified) {
+                // console.log("checkusers email is not varified", checkedUser)
                 return res.send(sendTemplate(false, "Email was not verified, signup again"))
             }
             if (email && checkedUser) {
+                // console.log("email and checkeduser here :", checkedUser)
+                const isSentAndValid = await PasswordResetRequest.findOne({ userId: checkedUser._id }).select("expiresAt")
+                // console.log(isSentAndValid)
+                if (isSentAndValid && new Date(isSentAndValid.expiresAt) < Date.now()) {
+                    return res.send(sendTemplate(false, "Already sent reset link, please click the link before expire"))
+                }
                 const secretKey = checkedUser._id + JWT_SECRET_KEY
-                const resetId = crypto.randomBytes(16).toString('hex')
+                const resetId = generatePassword()
                 const token = jwt.sign(
                     { userId: checkedUser._id, resetId },
                     secretKey,
@@ -224,13 +228,14 @@ class UserController {
                     "MeInfoer - Reset Password Link",
                     getVerificationLinkTemplate(link, "Reset Password", checkedUser?.name, "MeInfoer")
                 )
-                console.log('info:', info)
                 if (sent) {
+                    // console.log("sent email")
+                    const now = Date.now()
                     const createResetData = new PasswordResetRequest({
-                        userId: checkValidation._id,
+                        userId: checkedUser._id,
                         resetId,
-                        createdAt: Date.now(),
-                        expiresAt: Date.now() + (15 * 60 * 1000)
+                        createdAt: now,
+                        expiresAt: now + (15 * 60 * 1000)
                     })
                     await createResetData.save()
                     return res.send(sendTemplate(true, "Sent email, within 15 minutes check the reset password link"))
@@ -242,32 +247,32 @@ class UserController {
             }
 
         } catch (error) {
-            console.log(error)
+            // console.log(error)
             return res.send(sendTemplate(false))
         }
     }
 
     static resetPassword = async (req, res) => {
         try {
-            console.log(req.body)
+            // console.log(req.body)
             const { id, token } = req.params
             const { password, confirmPassword } = req.body
             if (password !== confirmPassword) {
                 return res.send(sendTemplate(false, "Passwords does not matched"))
             }
             if (!id && !token) {
-                return res.send(sendTemplate(false, "sorry, could not reach the page"))
+                return res.send(sendTemplate(false, "Sorry, could not reach the page"))
             }
 
             const { userId = undefined, resetId = undefined } = jwt.verify(token, id + JWT_SECRET_KEY)
-            console.log('coming here', userId)
+            // console.log('coming here', userId)
 
             if (!userId) {
                 return res.send(sendTemplate(false))
             }
             const resetRequest = await PasswordResetRequest.findOneAndDelete({ userId, resetId });
             if (!resetRequest) {
-                return res.send(sendTemplate(false, "Link may expired or something went wrong"))
+                return res.send(sendTemplate(false, "Already Changed or link may expired or something went wrong"))
             }
             if (checkValidation({ password: password, password: confirmPassword }).errors) {
                 return res.send(sendTemplate(false, "Please use a strong new password includes lowercase, uppercase and digits"))
@@ -275,12 +280,12 @@ class UserController {
             await User.findByIdAndUpdate(
                 userId,
                 { password: await bcrypt.hash(password, await bcrypt.genSalt(10)) }, { new: true }).select('-password')
-            console.log("changed of him/her", changedUser)
+            // console.log("changed of him/her", changedUser)
             return res.send(sendTemplate(true, "Successfully reset password"))
 
 
         } catch (error) {
-            return res.send(sendTemplate(false, error.message || 'Failed'))
+            return res.send(sendTemplate(false, error.message === "jwt expired" ? "Expired" : 'Failed'))
         }
     }
 
@@ -290,9 +295,17 @@ class UserController {
                 const { password } = req.body
                 if (password && isValidPasswordNormal(password)) {
                     const checkUserPassword = (await User.findById(req.user._id).select("password"))?.password
-                    if (checkUserPassword && (await bcrypt.compare(password, checkUserPassword))) {
-                        const isDeletedUser = await User.findByIdAndDelete(req.user._id)
+                    const isMatchedPassword = await bcrypt.compare(password, checkUserPassword)
+                    if (!isMatchedPassword) {
+                        return res.send(sendTemplate(false, "password is incorrect"))
+                    }
+                    if (checkUserPassword) {
+                        const userId = req.user._id
+                        const isDeletedUser = await User.findByIdAndDelete(userId)
                         if (isDeletedUser) {
+                            try {
+                                await PasswordResetRequest.findOneAndDelete({ userId });
+                            } catch (_) { }
                             return res.send(sendTemplate(true, "Successfully deleted user"))
                         } else {
                             return res.send(sendTemplate(false, "Failed to delete user"))
@@ -305,10 +318,10 @@ class UserController {
                     return res.send(sendTemplate(false, "Wrong password"))
                 }
             } else {
-                return res.send(sendTemplate(false, "Unauthorized token"))
+                return res.send(sendTemplate(false, "Unauthorized user"))
             }
         } catch (error) {
-            console.log(error)
+            // console.log(error)
             return res.send(sendTemplate(false))
         }
     }
@@ -324,7 +337,9 @@ class UserController {
                 return res.send(sendTemplate(false, `Invalid ${Object.keys(isError).join(', ')}`))
             }
             const updatedData = await User.findByIdAndUpdate(id, { ...dataToSave }, { new: true }).select(Object.keys(dataToSave).join(' '))
+            // console.log(updatedData)
             delete updatedData.password
+            // console.log(updatedData)
             return res.send(sendTemplate(true, "Successfully updated", updatedData))
         } catch (error) {
             // console.log(error)
@@ -355,10 +370,12 @@ class UserController {
                 if (isMatched) {
                     const updated = await User.findByIdAndUpdate(id, {
                         password: await bcrypt.hash(newPassword, await bcrypt.genSalt(10))
-                    })
+                    }, { new: true })
                     if (updated) {
                         return res.send(sendTemplate(true, "Successfully updated password"))
                     }
+                } else {
+                    return res.send(sendTemplate(false, "old password is incorrect"))
                 }
                 return res.send(sendTemplate(false))
             }

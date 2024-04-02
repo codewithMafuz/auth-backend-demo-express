@@ -28,5 +28,5 @@ export const JWT_SECRET_KEY = process.env.JWT_SECRET_KEY
 
 
 app.listen(PORT, () => {
-    console.log('app listening at port : ', PORT)
+    // console.log('app listening at port : ', PORT)
 })
