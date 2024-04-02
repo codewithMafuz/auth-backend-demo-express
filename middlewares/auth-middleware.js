@@ -23,7 +23,7 @@ var verifyUserAuth = async (req, res, next) => {
         }
     } catch (error) {
         // console.log('error in middleware', error)
-        return res.send({ success: false, status: "Failed", message: "something error happened" })
+        return res.send({ success: false, status: "Failed", message: error?.name === "JsonWebTokenError" ? "session token expired or not available" : "something error happened" })
     }
 }
 

@@ -2,8 +2,7 @@ import User from "../models/user.js";
 import jwt from 'jsonwebtoken'
 import bcrypt from 'bcrypt'
 import { checkValidation, generatePassword, isValidEmailAddress, isValidPasswordNormal } from "./helps/validation-help.js";
-import { nestedObjectStringsModify } from "./helps/object-help.js";
-import { getVerificationLinkTemplate, getVerificationCodeTemplate, sendMail, getEmailConfirmationTemplate } from "../config/emailConfig.js";
+import { getVerificationLinkTemplate, sendMail, getEmailConfirmationTemplate } from "../config/emailConfig.js";
 import { FRONTEND_BASE_PATH, JWT_SECRET_KEY } from '../app.js'
 import PasswordResetRequest from "../models/passwordResetRequest.js";
 
@@ -88,7 +87,7 @@ class UserController {
             }
 
         } catch (error) {
-            // console.log(error)
+            //  console.log(error)
             return res.send(sendTemplate(false, "Something went wrong"))
         }
     }
@@ -121,7 +120,7 @@ class UserController {
                 return { isSuccess: false }
             }
         } catch (error) {
-            // console.log(error)
+            //  console.log(error)
             return res.send(sendTemplate(false, "something went wrong"))
         }
     }
@@ -130,10 +129,10 @@ class UserController {
         try {
             const { id, token } = req.params
             const user = await User.findById(id)
-            // console.log(user)
+            //  console.log(user)
             if (!user.isEmailVerified) {
                 const { userId = null } = jwt.verify(token, id + JWT_SECRET_KEY)
-                // console.log('userid -----------------', userId)
+                //  console.log('userid -----------------', userId)
                 if (userId) {
                     await User.findByIdAndUpdate(
                         id,
@@ -204,15 +203,15 @@ class UserController {
         try {
             const email = req.body.email.trim()
             const checkedUser = await User.findOne({ email }).select('-password')
-            // console.log("checkuser", checkedUser)
+            //  console.log("checkuser", checkedUser)
             if (!checkedUser.isEmailVerified) {
-                // console.log("checkusers email is not varified", checkedUser)
+                //  console.log("checkusers email is not varified", checkedUser)
                 return res.send(sendTemplate(false, "Email was not verified, signup again"))
             }
             if (email && checkedUser) {
-                // console.log("email and checkeduser here :", checkedUser)
+                //  console.log("email and checkeduser here :", checkedUser)
                 const isSentAndValid = await PasswordResetRequest.findOne({ userId: checkedUser._id }).select("expiresAt")
-                // console.log(isSentAndValid)
+                //  console.log(isSentAndValid)
                 if (isSentAndValid && new Date(isSentAndValid.expiresAt) < Date.now()) {
                     return res.send(sendTemplate(false, "Already sent reset link, please click the link before expire"))
                 }
@@ -229,7 +228,7 @@ class UserController {
                     getVerificationLinkTemplate(link, "Reset Password", checkedUser?.name, "MeInfoer")
                 )
                 if (sent) {
-                    // console.log("sent email")
+                    //  console.log("sent email")
                     const now = Date.now()
                     const createResetData = new PasswordResetRequest({
                         userId: checkedUser._id,
@@ -247,14 +246,14 @@ class UserController {
             }
 
         } catch (error) {
-            // console.log(error)
+            //  console.log(error)
             return res.send(sendTemplate(false))
         }
     }
 
     static resetPassword = async (req, res) => {
         try {
-            // console.log(req.body)
+            //  console.log(req.body)
             const { id, token } = req.params
             const { password, confirmPassword } = req.body
             if (password !== confirmPassword) {
@@ -265,7 +264,7 @@ class UserController {
             }
 
             const { userId = undefined, resetId = undefined } = jwt.verify(token, id + JWT_SECRET_KEY)
-            // console.log('coming here', userId)
+            //  console.log('coming here', userId)
 
             if (!userId) {
                 return res.send(sendTemplate(false))
@@ -280,7 +279,7 @@ class UserController {
             await User.findByIdAndUpdate(
                 userId,
                 { password: await bcrypt.hash(password, await bcrypt.genSalt(10)) }, { new: true }).select('-password')
-            // console.log("changed of him/her", changedUser)
+            //  console.log("changed of him/her", changedUser)
             return res.send(sendTemplate(true, "Successfully reset password"))
 
 
@@ -321,7 +320,7 @@ class UserController {
                 return res.send(sendTemplate(false, "Unauthorized user"))
             }
         } catch (error) {
-            // console.log(error)
+            //  console.log(error)
             return res.send(sendTemplate(false))
         }
     }
@@ -332,17 +331,17 @@ class UserController {
             const id = dataToSave._id
             delete dataToSave._id
             const isError = checkValidation({ dataToSave }).errors
-            // console.log('data to save', dataToSave)
+            //  console.log('data to save', dataToSave)
             if (isError) {
                 return res.send(sendTemplate(false, `Invalid ${Object.keys(isError).join(', ')}`))
             }
             const updatedData = await User.findByIdAndUpdate(id, { ...dataToSave }, { new: true }).select(Object.keys(dataToSave).join(' '))
-            // console.log(updatedData)
+            //  console.log(updatedData)
             delete updatedData.password
-            // console.log(updatedData)
+            //  console.log(updatedData)
             return res.send(sendTemplate(true, "Successfully updated", updatedData))
         } catch (error) {
-            // console.log(error)
+            //  console.log(error)
             return res.send(sendTemplate(false))
         }
     }
