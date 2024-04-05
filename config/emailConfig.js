@@ -1,10 +1,9 @@
 import dotenv from 'dotenv'
 import nodemailer from 'nodemailer'
 dotenv.config()
-
+const emailFrom = process.env.EMAIL_FROM
 
 const transporter = nodemailer.createTransport({
-    service: process.env.EMAIL_SERVICE,
     host: process.env.EMAIL_HOST,
     port: process.env.EMAIL_PORT,
     secure: false,
@@ -15,14 +14,21 @@ const transporter = nodemailer.createTransport({
 });
 
 async function sendMail(to, subject, html) {
-    const info = await transporter.sendMail({
-        from: process.env.EMAIL_FROM,
+    try {
 
-        to,
-        subject,
-        html
-    })
-    return info
+        const info = await transporter.sendMail({
+            from: emailFrom,
+
+            to,
+            subject,
+            html
+        })
+        // console.log(info)
+        return info
+    } catch (error) {
+        // console.log(error)
+        return false
+    }
 }
 
 function getVerificationCodeTemplate(code, nameOrUsername, reasonToUseCode = "Please use this code and verify your new email</b>", fromBrandName = 'Our Company Name', extraHTML = '') {
